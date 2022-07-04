@@ -1,7 +1,9 @@
 package webviewloader
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"unsafe"
 
@@ -24,9 +26,10 @@ const (
 )
 
 // CompareBrowserVersions will compare the 2 given versions and return:
-//  -1 = v1 < v2
-//   0 = v1 == v2
-//   1 = v1 > v2
+//
+//	-1 = v1 < v2
+//	 0 = v1 == v2
+//	 1 = v1 > v2
 func CompareBrowserVersions(v1 string, v2 string) (int, error) {
 
 	_v1, err := windows.UTF16PtrFromString(v1)
@@ -98,15 +101,39 @@ func CreateCoreWebView2EnvironmentWithOptions(browserExecutableFolder, userDataF
 	return uintptr(res), nil
 }
 
+const (
+	LoaderFileName = "wv2loader.dll"
+)
+
 func loadFromMemory() error {
 	var err error
 	// DLL is not available natively. Try loading embedded copy.
 	memOnce.Do(func() {
-		memModule, memErr = winloader.LoadFromMemory(WebView2Loader)
-		if memErr != nil {
-			err = fmt.Errorf("Unable to load WebView2Loader.dll from memory: %w", memErr)
-			return
+		var loadFromMemory = false
+
+		if _, err = os.Stat(LoaderFileName); errors.Is(err, os.ErrNotExist) {
+			if err = os.WriteFile(LoaderFileName, WebView2Loader, os.ModePerm); err != nil {
+				loadFromMemory = true
+			}
 		}
+
+		if loadFromMemory {
+			memModule, memErr = winloader.LoadFromMemory(WebView2Loader)
+			if memErr != nil {
+				err = fmt.Errorf("Unable to load WebView2Loader.dll from memory: %w", memErr)
+				return
+			}
+		} else {
+			memModule, memErr = winloader.LoadFromFile(LoaderFileName)
+			if memErr != nil {
+				memModule, memErr = winloader.LoadFromMemory(WebView2Loader)
+				if memErr != nil {
+					err = fmt.Errorf("Unable to load WebView2Loader.dll: %w", memErr)
+					return
+				}
+			}
+		}
+
 		memCreate = memModule.Proc("CreateCoreWebView2EnvironmentWithOptions")
 		memCompareBrowserVersions = memModule.Proc("CompareBrowserVersions")
 		memGetAvailableCoreWebView2BrowserVersionString = memModule.Proc("GetAvailableCoreWebView2BrowserVersionString")
