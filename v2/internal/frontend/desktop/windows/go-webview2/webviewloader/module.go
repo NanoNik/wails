@@ -26,12 +26,14 @@ const (
 )
 
 // CompareBrowserVersions will compare the 2 given versions and return:
+//     Less than zero: v1 < v2
+//               zero: v1 == v2
+//  Greater than zero: v1 > v2
 //
 //	-1 = v1 < v2
 //	 0 = v1 == v2
 //	 1 = v1 > v2
 func CompareBrowserVersions(v1 string, v2 string) (int, error) {
-
 	_v1, err := windows.UTF16PtrFromString(v1)
 	if err != nil {
 		return 0, err
@@ -46,29 +48,38 @@ func CompareBrowserVersions(v1 string, v2 string) (int, error) {
 		return 0, err
 	}
 
-	var result int
+	var result int32
 	_, _, err = memCompareBrowserVersions.Call(
 		uint64(uintptr(unsafe.Pointer(_v1))),
 		uint64(uintptr(unsafe.Pointer(_v2))),
 		uint64(uintptr(unsafe.Pointer(&result))))
 
 	if err != windows.ERROR_SUCCESS {
-		return result, err
+		return 0, err
 	}
-	return result, nil
+	return int(result), nil
 }
 
-// GetInstalledVersion returns the installed version of the webview2 runtime.
+// GetWebviewVersion returns version of the webview2 runtime.
+// If path is empty, it will try to find installed webview2 is the system.
 // If there is no version installed, a blank string is returned.
-func GetInstalledVersion() (string, error) {
+func GetWebviewVersion(path string) (string, error) {
 	err := loadFromMemory()
 	if err != nil {
 		return "", err
 	}
 
+	var browserPath *uint16 = nil
+	if path != "" {
+		browserPath, err = windows.UTF16PtrFromString(path)
+		if err != nil {
+			return "", fmt.Errorf("error calling UTF16PtrFromString for %s: %v", path, err)
+		}
+	}
+
 	var result *uint16
 	res, _, err := memGetAvailableCoreWebView2BrowserVersionString.Call(
-		uint64(uintptr(unsafe.Pointer(nil))),
+		uint64(uintptr(unsafe.Pointer(browserPath))),
 		uint64(uintptr(unsafe.Pointer(&result))))
 
 	if res != 0 {

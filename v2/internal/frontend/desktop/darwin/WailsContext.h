@@ -61,6 +61,7 @@
 - (void) SetMinSize:(int)minWidth :(int)minHeight;
 - (void) SetMaxSize:(int)maxWidth :(int)maxHeight;
 - (void) SetTitle:(NSString*)title;
+- (void) SetAlwaysOnTop:(int)onTop;
 - (void) Center;
 - (void) Fullscreen;
 - (void) UnFullscreen;
@@ -69,7 +70,7 @@
 - (void) Maximise;
 - (void) ToggleMaximise;
 - (void) UnMaximise;
-- (void) SetRGBA:(int)r :(int)g :(int)b :(int)a;
+- (void) SetBackgroundColour:(int)r :(int)g :(int)b :(int)a;
 - (void) HideMouse;
 - (void) ShowMouse;
 - (void) Hide;

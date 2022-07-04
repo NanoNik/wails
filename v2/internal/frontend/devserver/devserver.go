@@ -207,6 +207,9 @@ func (d *DevWebServer) WindowMinimise() {
 func (d *DevWebServer) WindowUnminimise() {
 	d.desktopFrontend.WindowUnminimise()
 }
+func (d *DevWebServer) WindowSetAlwaysOnTop(b bool) {
+	d.desktopFrontend.WindowSetAlwaysOnTop(b)
+}
 
 func (d *DevWebServer) WindowSetPosition(x int, y int) {
 	d.desktopFrontend.WindowSetPosition(x, y)
@@ -240,8 +243,8 @@ func (d *DevWebServer) WindowUnfullscreen() {
 	d.desktopFrontend.WindowUnfullscreen()
 }
 
-func (d *DevWebServer) WindowSetRGBA(col *options.RGBA) {
-	d.desktopFrontend.WindowSetRGBA(col)
+func (d *DevWebServer) WindowSetBackgroundColour(col *options.RGBA) {
+	d.desktopFrontend.WindowSetBackgroundColour(col)
 }
 
 func (d *DevWebServer) MenuSetApplicationMenu(menu *menu.Menu) {
